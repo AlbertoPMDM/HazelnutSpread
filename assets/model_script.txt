@@ -1,0 +1,96 @@
+import bpy
+import numpy as np
+
+def f(x):
+    '''
+    Represents the piecewise function of the bottle
+    '''
+    if x==0:
+        return 0*x
+    if 0<x<0.44:
+        return 4.0307*x+1
+    elif 0.44<=x<0.8:
+        return 1.1275*x+2.2774
+    elif 0.8<=x<1.12:
+        return 0.6264*x+2.6783
+    elif 1.12<=x<1.6:
+        return 1.6045*x+1.5829
+    elif 1.6<=x<1.95:
+        return 1.11203*x + 2.37076
+    elif 1.95<=x<2.52:
+        return 0.55421*x + 3.4585
+    elif 2.52<=x<3:
+        return 0.04246*x + 4.74811
+    elif 3<=x<3.2:
+        return -0.37745*x + 6.00784
+    elif 3.2<=x<11.88:
+        return 0.02057*x + 4.73419
+    elif 11.88<=x<12.11:
+        return 0.44992*x - 0.36651
+    elif 12.11<=x<12.2634:
+        return -0.21464*x + 7.68128
+    elif 12.2634<=x<14.236:
+        return -0.46361*x + 10.73447
+    elif 14.236<=x<14.4845:
+        return -0.29342*x + 8.31168
+    elif 14.4845<=x<14.7:
+        return -0.01277*x + 4.24658
+    elif 14.7<=x<14.89:
+        return 1.52057*x - 18.29346
+    elif 14.89<=x<16.83:
+        return 0.00851*x + 4.22108
+    elif 16.83<=x<=17:
+        return -0.67978*x + 15.80506
+    else:
+        return 0.0
+
+#Im still not exactly sure about what vectorize does, but it kind of turns the function into a numpy array(?), but its necessary for numpy
+vf = np.vectorize(f)
+
+#define the ranges of numbers to use
+ll, ul = 0,17
+w = np.linspace(ll,ul,100)
+#print(w)
+y = np.linspace(0, 2*np.pi,100)
+#print(y)
+#print("\n\n")
+
+#manual mesh creation
+X=np.outer(vf(w), np.sin(y))
+Y=np.outer(vf(w), np.cos(y))
+Z=np.zeros_like(X)
+
+#z axis meesh
+for i in range(len(w)):
+    Z[i:i+1,:] = np.full_like(Z[0,:], w[i])
+
+# This code creates arrays of tuples based on the mesh to be used with the blender api to do the 3d model
+pointArray = []
+facesArray = []
+
+for i in range(len(w)):
+    for j in range(len(w)):
+        pointArray += (X[i][j], Y[i][j], Z[i][j]),
+        
+for i in range(len(w)-1):
+    for j in range(len(w)-1):
+        facesArray += ((i*100)+j, (i*100)+j+1, (i*100)+101+j,  (i*100)+100+j),
+
+faces = facesArray
+vertices = pointsArray
+edges = []
+
+# make mesh
+new_mesh = bpy.data.meshes.new('new_mesh')
+new_mesh.from_pydata(vertices, edges, faces)
+new_mesh.update()
+
+# make object from mesh
+new_object = bpy.data.objects.new('new_object', new_mesh)
+
+# make collection
+new_collection = bpy.data.collections.new('new_collection')
+bpy.context.scene.collection.children.link(new_collection)
+
+# add object to scene collection
+new_collection.objects.link(new_object)
